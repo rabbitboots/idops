@@ -44,7 +44,7 @@ Returns a scaled copy of ImageData `src` by integral amounts (2x, 3x, etc.)
 
 `idops.replaceRGBA(src, r1, g1, b1, a1, r2, g2, b2, a2)`
 
-Replaces pixels matching one set of RGBA values with a the second RGBA set.
+Replaces pixels matching one set of RGBA values with a second RGBA set.
 
 * `src` The ImageData to modify.
 * `r1` The target red value to check, in the range of 0-1.
