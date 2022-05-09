@@ -102,7 +102,7 @@ Adds a basic drop shadow to an ImageData. Intended for ImageFonts.
 
 `idops.addOutline4(src, tr, tg, tb, ta, sr, sg, sb, sa, ignore_t)`
 
-Adds a basic outline by running `idops.addDropShadow()` to the top, bottom, left, and right neighbors of each eligible pixel.
+Adds a basic outline by running `idops.addDropShadow()` on the top, bottom, left, and right neighbors of each eligible pixel.
 
 * `src` The ImageData to modify.
 * `tr` Transparency color key: red. The outline will be applied to these pixels only.
