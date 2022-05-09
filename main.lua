@@ -1,5 +1,5 @@
--- idops demo. For the actual library, see: './idops/idops.lua'
--- See './idops/README.md' for documentation and license info.
+-- idops demo.
+-- See 'README.md' for documentation and license info.
 
 require("demo_libs.test.strict")
 
