@@ -1,5 +1,5 @@
 -- idops: (LÖVE) ImageData Operations
--- Version: 0.0.2 (Beta)
+-- Version: 0.0.3 (Beta)
 -- Supported LÖVE Versions: 11.4
 -- See 'README.md' for documentation and license info.
 
