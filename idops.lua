@@ -17,7 +17,7 @@ end
 local function assertArgType2(arg_n, val, s1, s2)
 	local t_val = type(val)
 	if t_val ~= s1 and t_val ~= s2 then
-		error("bad type for argument #" .. arg_n .. ": expected " .. s1 .. " or " .. s2 ", got: " .. type(val))
+		error("bad type for argument #" .. arg_n .. ": expected " .. s1 .. " or " .. s2 .. ", got: " .. type(val))
 	end
 end
 
@@ -37,7 +37,7 @@ end
 
 
 local function pixInBounds(x, y, w, h)
-	return x > 0 and x < w-1 and y > 0 and y < h-1
+	return x >= 0 and x < w and y >= 0 and y < h
 end
 
 
@@ -377,7 +377,7 @@ function idops.addDropShadow(src, ox, oy, tr, tg, tb, ta, sr, sg, sb, sa, ignore
 	assertArgType(9, sg, "number")
 	assertArgType(10, sb, "number")
 	assertArgType(11, sa, "number")
-	assertArgType2(12, sa, "nil", "table")
+	assertArgType2(12, ignore_t, "nil", "table")
 
 	local w, h = src:getDimensions()
 	for y = 0, h - 1 do
@@ -385,13 +385,17 @@ function idops.addDropShadow(src, ox, oy, tr, tg, tb, ta, sr, sg, sb, sa, ignore
 			local r, g, b, a = src:getPixel(x, y)
 			local is_tr = compColor(r, g, b, a, tr, tg, tb, ta)
 
-			if is_tr then
-				if pixInBounds(x - ox, y - oy, w, h) then
+			if pixInBounds(x - ox, y - oy, w, h) then
+				if is_tr then
 					local r2, g2, b2, a2 = src:getPixel(x - ox, y - oy)
 
 					local do_set = true
 
-					if ignore_t then
+					-- Don't cast shadows from fully transparent pixels or other shadows.
+					if compColor(r2, g2, b2, a2, sr, sg, sb, sa) or compColor(r2, g2, b2, a2, tr, tg, tb, ta) then
+						do_set = false
+
+					elseif ignore_t then
 						for i = 1, #ignore_t do
 							local ig_c = ignore_t[i]
 							if compColor(r2, g2, b2, a2, ig_c[1], ig_c[2], ig_c[3], ig_c[4]) then
@@ -400,6 +404,7 @@ function idops.addDropShadow(src, ox, oy, tr, tg, tb, ta, sr, sg, sb, sa, ignore
 							end
 						end
 					end
+
 					if do_set then
 						src:setPixel(x, y, sr, sg, sb, sa)
 					end

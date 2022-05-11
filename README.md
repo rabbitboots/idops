@@ -80,7 +80,7 @@ Like `idops.replaceRGBA()`, but doesn't check or modify the alpha channel.
 
 Adds a basic drop shadow to an ImageData. Intended for ImageFonts.
 
-`idops.addDropShadow(i_data, ox, oy, tr, tg, tb, ta, sr, sg, sb, sa, ignore_t)`
+`idops.addDropShadow(src, ox, oy, tr, tg, tb, ta, sr, sg, sb, sa, ignore_t)`
 
 * `src` The ImageData to modify.
 * `ox` Shadow X pixel offset.
