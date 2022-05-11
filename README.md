@@ -9,9 +9,9 @@ Idops (IDOps?) is not complete and hasn't been thoroughly tested. I'm putting it
 
 ### idops.pasteScaled
 
-`idops.pasteScaled(src, dst, scale_x, scale_y, src_x, src_y, src_w, src_h, dst_x, dst_y)`
-
 Pastes the contents of one ImageData into another, with some basic scaling support (nearest neighbor only). The paste region is always at least 1x1 in size.
+
+`idops.pasteScaled(src, dst, scale_x, scale_y, src_x, src_y, src_w, src_h, dst_x, dst_y)`
 
 * `src` The source ImageData.
 * `dst` The destination ImageData.
@@ -29,9 +29,9 @@ Pastes the contents of one ImageData into another, with some basic scaling suppo
 
 ### idops.scaleIntegral
 
-`idops.scaleIntegral(src, sw, sh)`
-
 Returns a scaled copy of ImageData `src` by integral amounts (2x, 3x, etc.)
+
+`idops.scaleIntegral(src, sw, sh)`
 
 * `src` The source ImageData to use.
 * `sw` The new horizontal scale. Must be an integer >= 1.
@@ -42,9 +42,9 @@ Returns a scaled copy of ImageData `src` by integral amounts (2x, 3x, etc.)
 
 ### idops.replaceRGBA
 
-`idops.replaceRGBA(src, r1, g1, b1, a1, r2, g2, b2, a2)`
+Replaces pixels matching one set of RGBA values with a the second RGBA set.
 
-Replaces pixels matching one set of RGBA values with a second RGBA set.
+`idops.replaceRGBA(src, r1, g1, b1, a1, r2, g2, b2, a2)`
 
 * `src` The ImageData to modify.
 * `r1` The target red value to check, in the range of 0-1.
@@ -61,9 +61,9 @@ Replaces pixels matching one set of RGBA values with a second RGBA set.
 
 ### idops.replaceRGB
 
-`idops.replaceRGB(src, r1, g1, b1, r2, g2, b2)`
-
 Like `idops.replaceRGBA()`, but doesn't check or modify the alpha channel.
+
+`idops.replaceRGB(src, r1, g1, b1, r2, g2, b2)`
 
 * `src` The ImageData to modify.
 * `r1` The target red value to check, in the range of 0-1.
@@ -78,9 +78,9 @@ Like `idops.replaceRGBA()`, but doesn't check or modify the alpha channel.
 
 ### idops.addDropShadow
 
-`idops.addDropShadow(i_data, ox, oy, tr, tg, tb, ta, sr, sg, sb, sa, ignore_t)`
-
 Adds a basic drop shadow to an ImageData. Intended for ImageFonts.
+
+`idops.addDropShadow(i_data, ox, oy, tr, tg, tb, ta, sr, sg, sb, sa, ignore_t)`
 
 * `src` The ImageData to modify.
 * `ox` Shadow X pixel offset.
@@ -100,9 +100,9 @@ Adds a basic drop shadow to an ImageData. Intended for ImageFonts.
 
 ### idops.addOutline4
 
-`idops.addOutline4(src, tr, tg, tb, ta, sr, sg, sb, sa, ignore_t)`
+Adds a basic outline by running `idops.addDropShadow()` to the top, bottom, left, and right neighbors of each eligible pixel.
 
-Adds a basic outline by running `idops.addDropShadow()` on the top, bottom, left, and right neighbors of each eligible pixel.
+`idops.addOutline4(src, tr, tg, tb, ta, sr, sg, sb, sa, ignore_t)`
 
 * `src` The ImageData to modify.
 * `tr` Transparency color key: red. The outline will be applied to these pixels only.
@@ -120,9 +120,9 @@ Adds a basic outline by running `idops.addDropShadow()` on the top, bottom, left
 
 ### idops.addOutline8
 
-`idops.addOutline8(src, tr, tg, tb, ta, sr, sg, sb, sa, ignore_t)`
-
 Like `idops.addOutline4()`, but applies the drop-shadow function to all eight neighbors of every eligible pixel.
+
+`idops.addOutline8(src, tr, tg, tb, ta, sr, sg, sb, sa, ignore_t)`
 
 * `src` The ImageData to modify.
 * `tr` Transparency color key: red. The outline will be applied to these pixels only.
@@ -136,6 +136,44 @@ Like `idops.addOutline4()`, but applies the drop-shadow function to all eight ne
 * `ignore_t` *(Optional)* Table of tables (ie `{{1, 0, 0, 1}, {0, 1, 0, 1}, [etc.]}`), specifying colors which should not be treated as possible outline contours. Note that it's a linear search, so adding several color tables could have performance implications.
 
 **Returns:** Nothing. The ImageData is modified in-place.
+
+
+### idops.glyphsAddSpacing
+
+Given an ImageData [formatted for use as an ImageFont](https://love2d.org/wiki/ImageFontFormat), copy each glyph to a new ImageData with additional spacing.
+
+`idops.glyphsAddSpacing(src, pad_left, pad_right, pad_top, pad_bottom, sr, sg, sb, sa)`
+
+* `src` The source ImageData.
+* `pad_left` How many pixel columns to add to the left of each glyph. Must be >= 0.
+* `pad_right` Columns to add to the right of each glyph. Must be >= 0.
+* `pad_top` Rows to add to the top of the entire ImageData. Must be >= 0.
+* `pad_bottom` Rows to add to the bottom of the entire ImageData. Must be >= 0.
+* `sr` Spacer red component. If not provided, the function will use the RGBA value in the top-left pixel of `src`.
+* `sg` Spacer green component.
+* `sb` Spacer blue component.
+* `sa` Spacer alpha component.
+
+**Returns:** A new ImageData with padded glyphs.
+
+
+### idops.glyphsCropHorizontal
+
+Given an ImageData [formatted for use as an ImageFont](https://love2d.org/wiki/ImageFontFormat), return a new ImageData with empty horizontal columns trimmed out of glyphs which contain at least one non-background pixel. (Glyphs containing only background pixels, for example "space", are not trimmed.)
+
+`idops.glyphsCropHorizontal(src, sr, sg, sb, sa, tr, tg, tb, ta)`
+
+* `src` The source ImageData.
+* `sr` Red component of the spacer that separates glyphs. If `sr` is not provided, the color in the top-left pixel of `src` will be used.
+* `sg` Spacer green component.
+* `sb` Spacer blue component.
+* `sa` Spacer alpha component.
+* `tr` Red component of the cut-out transparency (or "background") color key.
+* `tg` Background green component.
+* `tb` Background blue component.
+* `ta` Background alpha component.
+
+**Returns:** A new ImageData with glyphs cropped horizontally.
 
 
 ## License

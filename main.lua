@@ -15,14 +15,16 @@ require("demo_libs.test.strict")
 --]]
 
 
-local idops = require("idops.idops")
-
+local idops = require("idops")
 
 -- Demo state container
 local demo = {}
 
 
 function love.load(arguments)
+
+	love.window.setTitle("idops v0.0.2 demo")
+	love.window.updateMode(love.graphics.getWidth(), love.graphics.getHeight(), {resizable = true})
 
 	-- Temporary ImageData
 	local i_data = love.image.newImageData("demo_resources/term_thin_var.png")
@@ -50,6 +52,10 @@ function love.load(arguments)
 	-- The optional padding could be converted to transparency to make room for
 	-- stuff like drop shadows. For now, let's just convert it to separator columns. 
 	idops.replaceRGBA(i_data, p_r, p_g, p_b, p_a, s_r, s_g, s_b, s_a)	
+
+	-- (v0.0.2: Test horizontal crop)
+	--i_data = idops.glyphsCropHorizontal(i_data, TR, TG, TB, TA, s_r, s_g, s_b, s_a)
+	--i_data = idops.glyphsAddSpacing(i_data, 1, 1, 0, 0, s_r, s_g, s_b, s_a)
 
 	-- Make the ImageFont.
 	demo.glyphs = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
@@ -93,6 +99,7 @@ end
 
 function love.draw()
 	love.graphics.setColor(1, 1, 1, 1)
+
 	love.graphics.translate(16, 16)
 
 	for i = 1, #demo.i_fonts do
