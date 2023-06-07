@@ -1,8 +1,8 @@
+**NOTE:** This is a beta. Version: 0.0.4
+
 # idops.lua
 
 Idops (ImageData Operations) contains some utility functions for working with LÖVE ImageData objects, particularly those intended to be used as ImageFonts.
-
-Idops (IDOps?) is not complete and hasn't been thoroughly tested. I'm putting it online because I'm using it in a few different projects, and want to keep track of the most recently updated copy. It's MIT-licensed, so you can do almost anything you want with it. Just be aware that the functions in this repo aren't totally settled yet.
 
 
 ## Functions
@@ -176,9 +176,19 @@ Given an ImageData [formatted for use as an ImageFont](https://love2d.org/wiki/I
 **Returns:** A new ImageData with glyphs cropped horizontally.
 
 
+### idops.extrude
+
+Extrudes a rectangular portion of an ImageData by bleeding its edge colors outward by one pixel.
+
+`idops.extrude(src, x, y, w, h)`
+
+* `src`: The ImageData to modify.
+* `x`, `y`, `w`, `h`: The rectangular area to extrude.
+
+
 ## License
 
-Copyright (c) 2022 RBTS
+Copyright (c) 2022, 2023 RBTS
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

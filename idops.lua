@@ -1,5 +1,5 @@
 -- idops: (LÖVE) ImageData Operations
--- Version: 0.0.3 (Beta)
+-- Version: 0.0.4 (Beta)
 -- Supported LÖVE Versions: 11.4
 -- See 'README.md' for documentation and license info.
 
@@ -94,6 +94,43 @@ end
 
 local function map_invert(x, y, r, g, b, a)
 	return 1 - r, 1 - g, 1 - b, 1 - a
+end
+
+
+local function map_premultiply(x, y, r, g, b, a)
+	return r*a, g*a, b*a, a
+end
+
+
+local function map_predivide(x, y, r, g, b, a) -- "unpremultiply"
+	if a <= 0 then
+		return 0, 0, 0, 0
+	else
+		return r/a, g/a, b/a, a
+	end
+end
+
+
+local function map_premultiplyGamma(x, y, r, g, b, a)
+
+	-- https://love2d.org/wiki/love.math.linearToGamma
+	r, g, b = love.math.gammaToLinear(r, g, b)
+	r, g, b = r*a, g*a, b*a
+	r, g, b = love.math.linearToGamma(r, g, b)
+
+	return r, g, b, a
+end
+
+
+local function map_predivideGamma(x, y, r, g, b, a) -- "unpremultiply"
+	if a <= 0 then
+		return 0, 0, 0, 0
+	else
+		r, g, b = love.math.gammaToLinear(r, g, b)
+		r, g, b = r/a, g/a, b/a
+		r, g, b = love.math.linearToGamma(r, g, b)
+		return r, g, b, a
+	end
 end
 
 
@@ -542,6 +579,22 @@ function idops.glyphsCropHorizontal(src, tr, tg, tb, ta, sr, sg, sb, sa)
 	writeSpacerColumn(dst, dst:getWidth() - 1, sr, sg, sb, sa)
 
 	return dst
+end
+
+
+function idops.extrude(src, x, y, w, h)
+
+	-- Edges
+	src:paste(src, x, y - 1, x, y, w, 1)
+	src:paste(src, x, y + h, x, y + h - 1, w, 1)
+	src:paste(src, x - 1, y, x, y, 1, h)
+	src:paste(src, x + w, y, x + w - 1, y, 1, h)
+
+	-- Corners
+	src:paste(src, x - 1, y - 1, x, y, 1, 1)
+	src:paste(src, x + w, y - 1, x + w - 1, y, 1, 1)
+	src:paste(src, x - 1, y + h, x, y + h - 1, 1, 1)
+	src:paste(src, x + w, y + h, x + w - 1, y + h - 1, 1, 1)
 end
 
 

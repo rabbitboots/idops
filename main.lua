@@ -23,9 +23,6 @@ local demo = {}
 
 function love.load(arguments)
 
-	love.window.setTitle("idops v0.0.2 demo")
-	love.window.updateMode(love.graphics.getWidth(), love.graphics.getHeight(), {resizable = true})
-
 	-- Temporary ImageData
 	local i_data = love.image.newImageData("demo_resources/term_thin_var.png")
 
@@ -84,6 +81,13 @@ function love.load(arguments)
 	-- We can drop the temp ImageData now.
 	i_data:release()
 	i_data = nil
+
+	-- Extrude test
+	demo.id_ext = love.image.newImageData("demo_resources/extrude!.png")
+	for i = 0, 15 do
+		idops.extrude(demo.id_ext, 36 - i, 59 - i, 57 + i*2, 11 + i*2)
+	end
+	demo.img_ext = love.graphics.newImage(demo.id_ext)
 end
 
 
@@ -108,5 +112,9 @@ function love.draw()
 		love.graphics.print(demo.text, 0, 0)
 		love.graphics.translate(0, fnt:getHeight() + 16)
 	end
+
+	love.graphics.origin()
+	love.graphics.setColor(1, 1, 1, 1)
+	love.graphics.draw(demo.img_ext, love.graphics.getWidth() - demo.img_ext:getWidth(), love.graphics.getHeight() - demo.img_ext:getHeight())
 end
 
