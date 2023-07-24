@@ -1,3 +1,17 @@
+# v0.0.5 (2023-JUL-24)
+
+* Updated README.md:
+  * Changed formatting of function argument descriptions.
+  * Typo corrections.
+  * Rewording.
+* Added public premultiply and predivide functions:
+  * `idops.premultiply`
+  * `idops.predivide`
+* Removed `map_imageDataToTemp()` and `map_tempToImageData()` as they were unused.
+* Added `idops.bleedRGBToZeroAlpha()`.
+* Added `idops.forceAlpha()`.
+
+
 # v0.0.4 (2023-JUN-07)
 
 * Added `idops.extrude`.

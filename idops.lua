@@ -1,5 +1,5 @@
 -- idops: (LÖVE) ImageData Operations
--- Version: 0.0.4 (Beta)
+-- Version: 0.0.5 (Beta)
 -- Supported LÖVE Versions: 11.4
 -- See 'README.md' for documentation and license info.
 
@@ -38,35 +38,6 @@ end
 
 local function pixInBounds(x, y, w, h)
 	return x >= 0 and x < w and y >= 0 and y < h
-end
-
-
--- scaleIntegral(): Holds a temp copy of the source ImageData pixel contents.
-local temp = {}
-local temp_i
-local temp_w
-local temp_sw
-local temp_sh
-
-
--- scaleIntegral(): Copies source ImageData pixel values to a temporary array.
-local function map_imageDataToTemp(x, y, r, g, b, a)
-	temp[temp_i + 1] = r
-	temp[temp_i + 2] = g
-	temp[temp_i + 3] = b
-	temp[temp_i + 4] = a
-
-	temp_i = temp_i + 4
-
-	return r, g, b, a
-end
-
-
--- scaleIntegral(): Copies temp array values to the scaled destination ImageData.
-local function map_tempToImageData(x, y, r, g, b, a)
-	local i = 1 + (math.floor(y/temp_sh)*temp_w + math.floor(x/temp_sw)) * 4
-
-	return temp[i], temp[i + 1], temp[i + 2], temp[i + 3]
 end
 
 
@@ -595,6 +566,178 @@ function idops.extrude(src, x, y, w, h)
 	src:paste(src, x + w, y - 1, x + w - 1, y, 1, 1)
 	src:paste(src, x - 1, y + h, x, y + h - 1, 1, 1)
 	src:paste(src, x + w, y + h, x + w - 1, y + h - 1, 1, 1)
+end
+
+
+function idops.premultiply(src, gamma_correct, x, y, w, h)
+
+	if not x then
+		x, y, w, h = 0, 0, src:getDimensions()
+	end
+
+	local map_fn = gamma_correct and map_premultiplyGamma or map_premultiply
+
+	src:mapPixel(map_fn, x, y, w, h)
+end
+
+
+function idops.predivide(src, gamma_correct, x, y, w, h)
+
+	if not x then
+		x, y, w, h = 0, 0, src:getDimensions()
+	end
+
+	local map_fn = gamma_correct and map_predivideGamma or map_predivide
+
+	src:mapPixel(map_fn, x, y, w, h)
+end
+
+
+-- idops.bleedRGBToZeroAlpha(): Tracks pixels to mark as processed.
+local temp_stack = {}
+
+
+-- idops.bleedRGBToZeroAlpha()
+local function bleedRGBToZeroAlpha_stripMask(mask)
+
+	while #temp_stack > 0 do
+		local yy = temp_stack[#temp_stack]
+		temp_stack[#temp_stack] = nil
+		local xx = temp_stack[#temp_stack]
+		temp_stack[#temp_stack] = nil
+
+		mask:setPixel(xx, yy, 1, 0, 0, 1)
+	end
+end
+
+
+function idops.bleedRGBToZeroAlpha(src, iter, x, y, w, h)
+
+	-- [XXX PERF]: Maybe use ByteData setters + love.data.unpack() in LÖVE 12.
+
+	-- Defaults
+	iter = iter or 1
+	if not x then
+		x = 0
+		y = 0
+		w = src:getWidth()
+		h = src:getHeight()
+	end
+
+	-- Track pending pixels with a secondary image / mask.
+	local mask = love.image.newImageData(w, h, "r8")
+
+	-- In the mask, red pixels are either visible or have already been processed. Black pixels are awaiting processing.
+	for yy = 0, h - 1 do
+		for xx = 0, w - 1 do
+			local r, g, b, a = src:getPixel(x + xx, y + yy)
+			if a > 0 then
+				mask:setPixel(xx, yy, 1, 0, 0, 1)
+			end
+		end
+	end
+
+	for i = 1, iter do
+		local loop_work = false
+
+		-- Right to left
+		for yy = 0, h - 1 do
+			for xx = 0, w - 2 do
+				local m1 = mask:getPixel(xx, yy)
+				if m1 == 0 then
+					local m2 = mask:getPixel(xx + 1, yy)
+					if m2 == 1 then
+						local sr, sg, sb, sa = src:getPixel(x + xx + 1, y + yy)
+						src:setPixel(x + xx, y + yy, sr, sg, sb, 0)
+						table.insert(temp_stack, xx)
+						table.insert(temp_stack, yy)
+						loop_work = true
+					end
+				end
+			end
+		end
+		bleedRGBToZeroAlpha_stripMask(mask)
+
+
+		-- Left to right
+		for yy = 0, h - 1 do
+			for xx = 1, w - 1 do
+				local m1 = mask:getPixel(xx, yy)
+				if m1 == 0 then
+					local m2 = mask:getPixel(xx - 1, yy)
+					if m2 == 1 then
+						local sr, sg, sb, sa = src:getPixel(x + xx - 1, y + yy)
+						src:setPixel(x + xx, y + yy, sr, sg, sb, 0)
+						table.insert(temp_stack, xx)
+						table.insert(temp_stack, yy)
+						loop_work = true
+					end
+				end
+			end
+		end
+		bleedRGBToZeroAlpha_stripMask(mask)
+
+
+		-- Bottom to top
+		for yy = 0, h - 2 do
+			for xx = 0, w - 1 do
+				local m1 = mask:getPixel(xx, yy)
+				if m1 == 0 then
+					local m2 = mask:getPixel(xx, yy + 1)
+					if m2 == 1 then
+						local sr, sg, sb, sa = src:getPixel(x + xx, y + yy + 1)
+						src:setPixel(xx, yy, sr, sg, sb, 0)
+						table.insert(temp_stack, xx)
+						table.insert(temp_stack, yy)
+						loop_work = true
+					end
+				end
+			end
+		end
+		bleedRGBToZeroAlpha_stripMask(mask)
+
+		-- Top to bottom
+		for yy = 1, h - 1 do
+			for xx = 0, w - 1 do
+				local m1 = mask:getPixel(xx, yy)
+				if m1 == 0 then
+					local m2 = mask:getPixel(xx, yy - 1)
+					if m2 == 1 then
+						local sr, sg, sb, sa = src:getPixel(x + xx, y + yy - 1)
+						src:setPixel(xx, yy, sr, sg, sb, 0)
+						table.insert(temp_stack, xx)
+						table.insert(temp_stack, yy)
+						loop_work = true
+					end
+				end
+			end
+		end
+		bleedRGBToZeroAlpha_stripMask(mask)
+
+		-- Stop now if no work was completed during this iteration.
+		if not loop_work then
+			break
+		end
+	end
+
+	mask:release()
+end
+
+
+local temp_force_a = 1.0
+
+
+local function map_forceAlpha(x, y, r, g, b, a)
+	return r, g, b, temp_force_a
+end
+
+
+function idops.forceAlpha(src, a, x, y, w, h)
+
+	assertArgType(2, a, "number")
+
+	temp_force_a = a
+	src:mapPixel(map_forceAlpha, x, y, w, h)
 end
 
 

@@ -23,6 +23,8 @@ local demo = {}
 
 function love.load(arguments)
 
+	demo.font = love.graphics.newFont(14)
+
 	-- Temporary ImageData
 	local i_data = love.image.newImageData("demo_resources/term_thin_var.png")
 
@@ -85,9 +87,33 @@ function love.load(arguments)
 	-- Extrude test
 	demo.id_ext = love.image.newImageData("demo_resources/extrude!.png")
 	for i = 0, 15 do
-		idops.extrude(demo.id_ext, 36 - i, 59 - i, 57 + i*2, 11 + i*2)
+		idops.extrude(demo.id_ext, 20 - i, 43 - i, 57 + i*2, 11 + i*2)
 	end
 	demo.img_ext = love.graphics.newImage(demo.id_ext)
+
+	-- Unassociated alpha color bleed test.
+	-- No treatment. Shown with nearest neighbor and bilinear filtering to demonstrate the bleeding issue in the latter.
+	demo.id_bleed = love.image.newImageData("demo_resources/bleed!.png")
+	demo.img_bleed = love.graphics.newImage(demo.id_bleed)
+	demo.img_bleed:setFilter("linear", "linear")
+
+	-- The treated image.
+	demo.id_bleed2 = love.image.newImageData("demo_resources/bleed!.png")
+	idops.bleedRGBToZeroAlpha(demo.id_bleed2, 1)
+	demo.img_bleed2 = love.graphics.newImage(demo.id_bleed2)
+	demo.img_bleed2:setFilter("linear", "linear")
+
+	-- Visualization of the treated image with alpha forced to 1 on all pixels.
+	demo.id_bleed3 = demo.id_bleed2:clone()
+	idops.forceAlpha(demo.id_bleed3, 1.0)
+	demo.img_bleed3 = love.graphics.newImage(demo.id_bleed3)
+	demo.img_bleed3:setFilter("nearest", "nearest")
+
+	-- Visualization of the untreated image with alpha forced to 1.
+	demo.id_bleed4 = demo.id_bleed:clone()
+	idops.forceAlpha(demo.id_bleed4, 1.0)
+	demo.img_bleed4 = love.graphics.newImage(demo.id_bleed4)
+	demo.img_bleed4:setFilter("nearest", "nearest")
 end
 
 
@@ -98,12 +124,22 @@ function love.keypressed(kc, sc)
 end
 
 
---function love.update(dt)
+local bl_sx = 1
+local bl_sy = 1
+local time = 0
+
+
+function love.update(dt)
+
+	time = time + dt
+	bl_sx = math.abs(math.sin(time)) * 2
+	bl_sy = bl_sx
+end
 
 
 function love.draw()
-	love.graphics.setColor(1, 1, 1, 1)
 
+	love.graphics.setColor(1, 1, 1, 1)
 	love.graphics.translate(16, 16)
 
 	for i = 1, #demo.i_fonts do
@@ -116,5 +152,75 @@ function love.draw()
 	love.graphics.origin()
 	love.graphics.setColor(1, 1, 1, 1)
 	love.graphics.draw(demo.img_ext, love.graphics.getWidth() - demo.img_ext:getWidth(), love.graphics.getHeight() - demo.img_ext:getHeight())
+
+	local x_offset = 0
+	local y_offset = love.graphics.getHeight() - demo.img_bleed:getHeight()
+	local y_offset_labels = y_offset - demo.img_bleed:getHeight() - demo.font:getHeight()
+
+	love.graphics.setFont(demo.font)
+
+	love.graphics.print("* Alpha bleed tests:", 0, y_offset_labels - demo.font:getHeight()*2)
+
+	love.graphics.print("Untreated; bilinear", x_offset, y_offset_labels)
+	demo.img_bleed:setFilter("linear", "linear")
+	love.graphics.draw(
+		demo.img_bleed,
+		x_offset + demo.img_bleed:getWidth(),
+		y_offset,
+		0,
+		bl_sx,
+		bl_sy,
+		demo.img_bleed:getWidth()/2,
+		demo.img_bleed:getHeight()/2
+	)
+
+	x_offset = x_offset + demo.img_bleed:getWidth() * 2
+
+	love.graphics.print("Untreated; nearest", x_offset, y_offset_labels)
+	demo.img_bleed:setFilter("nearest", "nearest")
+	love.graphics.draw(
+		demo.img_bleed,
+		x_offset + demo.img_bleed:getWidth(),
+		y_offset,
+		0,
+		bl_sx,
+		bl_sy,
+		demo.img_bleed:getWidth()/2,
+		demo.img_bleed:getHeight()/2
+	)
+
+	x_offset = x_offset + demo.img_bleed:getWidth() * 2
+
+	love.graphics.print("Treated; bilinear", x_offset, y_offset_labels)
+	love.graphics.draw(
+		demo.img_bleed2,
+		x_offset + demo.img_bleed2:getWidth(),
+		y_offset,
+		0,
+		bl_sx,
+		bl_sy,
+		demo.img_bleed2:getWidth()/2,
+		demo.img_bleed2:getHeight()/2
+	)
+
+	x_offset = x_offset + demo.img_bleed3:getWidth() * 2
+
+	love.graphics.print("Treated vs untreated", x_offset, y_offset_labels)
+
+	-- Alternate between treated and untreated visualizations.
+	local img = demo.img_bleed3
+	if time % 2 <= 1 then
+		img = demo.img_bleed4
+	end
+	love.graphics.draw(
+		img,
+		x_offset + demo.img_bleed3:getWidth(),
+		y_offset,
+		0,
+		2,
+		2,
+		demo.img_bleed3:getWidth()/2,
+		demo.img_bleed3:getHeight()/2
+	)
 end
 
